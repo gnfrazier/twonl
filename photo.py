@@ -1,17 +1,38 @@
 from io import BytesIO
 from PIL import Image
+import shutil
+import arrow
 
 from bs4 import BeautifulSoup
 import requests
 
 
-def get_photostream(flickr_link):
-    '''Returns a list of images from the photostream page'''
+def get_stream_url(flickr_link):
+    '''Processes a long flickr link to the main stream page'''
     
     parsed = flickr_link.replace('https://','').split('/')
     url = '/'.join(parsed[:parsed.index('nlowell')+1])
     
-    stream_url = 'https://' + url
+    return 'https://' + url
+
+
+def get_last_stream_page(stream_url):
+    '''Extracts the integer of the last page in a stream'''
+    
+
+    stream_page = requests.get(stream_url)
+    ssoup = BeautifulSoup(stream_page.text, 'html.parser')
+    pagination = list(ssoup.find(
+        class_='view pagination-view requiredToShowOnServer photostream'
+        ).children)[-4:-3]
+    last_page = int(pagination[0].text)
+    
+    return last_page
+
+
+def get_photostream(stream_url):
+    '''Returns a list of images from a photostream page'''
+       
     photos = requests.get(stream_url)
     psoup = BeautifulSoup(photos.text, 'html.parser')
     
@@ -31,6 +52,19 @@ def get_photostream(flickr_link):
     
     return photo_url_list
 
+def build_flickr_archive(flickr_link, archive):
+    '''Iterates through entire photostream to build archive'''
+    
+    stream_url = get_stream_url(flickr_link)
+    last_page = get_last_stream_page(stream_url)
+    
+    for page in (range(1,last_page)):
+        url = 'https://www.flickr.com/photos/nlowell/page' + str(page)
+        print(url)
+        stream = get_photostream(url)
+        archive = process_photo_stream_page(stream, archive)
+        
+    return archive
 
 def get_original_photo(photo_id):
     '''for a single photo id, returns dictionary of photo attributes'''
@@ -44,32 +78,75 @@ def get_original_photo(photo_id):
     src = orig_link.contents[1]
     info['link'] = src.get('src')
     
-    title = soup.title.text.replace(
-    'All sizes | ','').replace(
-    ' | Flickr - Photo Sharing!', '')
+    raw_title = soup.title.text
     
-    if title.index('.'):
+    title = soup.title.text.split('|')[1].strip()
+    
+    if title.find('.')> 0:
         info['condition'] = title.split('.')[-1].strip()
         full_title = title.split('.')[0].split(' ')
         info['tag'] = full_title[0]
         info['temp'] = full_title[1]
         
-    elif title.index(','):
+    elif title.find(',')> 0:
         info['condition'] = title.split(',')[-1].strip()
         full_title = title.split(',')[0].split(' ')
         info['tag'] = full_title[0]
         info['temp'] = full_title[1]        
         
         
-
+    info['raw_title'] = raw_title # incase titles need to be reprocessed
     info['sun'] = ' '.join(full_title[2:])
     
-    if info['tag'] != '#tommw':
+    if info['tag'] not in ['#tommw','#tommy']:
         info = None
 
     return info
 
+def process_photo_stream_page(stream, archive=None):
+    
+    if not archive:
+        archive = get_archive()
+    
+    for photo in stream:
+        image_name = photo.split('/')[-1]
+        photo_id = image_name.split('_')[0]
 
+        if photo_id in archive['meta']['ids']:
+            # skip photos already recorded
+            continue
+
+        # Save the thumb size image
+        thumb_name = 'images/' + photo_id + '.jpg'
+        image = requests.get(photo, stream=True)
+        
+        
+        with open(thumb_name, 'wb') as image_file:
+            shutil.copyfileobj(image.raw, image_file)
+
+        # Only the original has EXIF data
+        info = get_original_photo(photo_id)
+        
+        # Format the EXIF data
+        if info:
+            info['photo_id'] = photo_id
+            info['thumb'] = thumb_name
+            p_url = info.get('link')
+            if p_url:
+                camera, timestamp = get_exif(p_url)
+            else:
+                camera, timestamp = ('Error', 'Error' )
+            info['camera'] = camera
+            info['timestamp'] = timestamp
+            archive['data'].append(info)
+            archive['meta']['ids'].append(photo_id)
+            archive['meta']['last_updated'] = str(arrow.now())
+            print(photo_id + ' added')
+
+        else:
+            print('no #tommow tag found')
+            
+    return archive
 
 def get_exif(url):
     photo = requests.get(url)
