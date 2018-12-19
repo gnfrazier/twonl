@@ -83,22 +83,32 @@ def get_original_photo(photo_id):
     title = soup.title.text.split('|')[1].strip()
     
     if title.find('.')> 0:
-        info['condition'] = title.split('.')[-1].strip()
-        full_title = title.split('.')[0].split(' ')
-        info['tag'] = full_title[0]
-        info['temp'] = full_title[1]
+        
+        try:
+            info['condition'] = title.split('.')[-1].strip()
+            full_title = title.split('.')[0].split(' ')
+            info['tag'] = full_title[0]
+            info['temp'] = full_title[1]
+            info['sun'] = ' '.join(full_title[2:])
+        except:
+            info['tag'] = 'Error'
         
     elif title.find(',')> 0:
-        info['condition'] = title.split(',')[-1].strip()
-        full_title = title.split(',')[0].split(' ')
-        info['tag'] = full_title[0]
-        info['temp'] = full_title[1]        
         
+        try:
+            info['condition'] = title.split(',')[-1].strip()
+            full_title = title.split(',')[0].split(' ')
+            info['tag'] = full_title[0]
+            info['temp'] = full_title[1]    
+            info['sun'] = ' '.join(full_title[2:])
+        
+        except:
+            info['tag'] = 'Error'
         
     info['raw_title'] = raw_title # incase titles need to be reprocessed
-    info['sun'] = ' '.join(full_title[2:])
     
-    if info['tag'] not in ['#tommw','#tommy']:
+    
+    if info.get('tag') not in ['#tommw','#tommy']:
         info = None
 
     return info
