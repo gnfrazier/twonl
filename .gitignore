@@ -1,6 +1,7 @@
 # Data files for this repo
 archive.json
 images/
+audio/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
