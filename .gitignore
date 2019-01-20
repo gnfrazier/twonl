@@ -1,4 +1,5 @@
 # Data files for this repo
+*.toml
 archive.json
 images/
 audio/

@@ -16,20 +16,27 @@ def get_stream_url(flickr_link):
     return 'https://' + url
 
 
-def get_last_stream_page(stream_url):
+def get_last_stream_page(stream_url, album=False):
     '''Extracts the integer of the last page in a stream'''
 
     stream_page = requests.get(stream_url)
     ssoup = BeautifulSoup(stream_page.text, 'html.parser')
+    
+    if album:
+        page_class = 'view pagination-view requiredToShowOnServer'
+    
+    else:
+        page_class = 'view pagination-view requiredToShowOnServer photostream'
+    
     pagination = list(ssoup.find(
-        class_='view pagination-view requiredToShowOnServer photostream'
+        class_=page_class
     ).children)[-4:-3]
     last_page = int(pagination[0].text)
 
     return last_page
 
 
-def get_photostream(stream_url):
+def get_photostream(stream_url, album=False):
     '''Returns a list of images from a photostream page'''
 
     photos = requests.get(stream_url)
@@ -40,6 +47,12 @@ def get_photostream(stream_url):
         + "stream awake"
     )
 
+    if album:
+        stream_list = psoup.find_all(
+        class_="view photo-list-photo-view requiredToShowOn"
+        + "Server awake"
+    )
+    
     photo_url_list = []
     for photo in stream_list:
 
@@ -52,16 +65,23 @@ def get_photostream(stream_url):
     return photo_url_list
 
 
-def build_flickr_archive(flickr_link, archive):
+def build_flickr_archive(flickr_link, archive, album=False):
     '''Iterates through entire photostream to build archive'''
 
-    stream_url = get_stream_url(flickr_link)
-    last_page = get_last_stream_page(stream_url)
+    
+    if album:
+        stream_url = flickr_link
+    
+    else:
+        stream_url = get_stream_url(flickr_link)
+    
+    last_page = get_last_stream_page(stream_url, album)
 
+    
     for page in (range(1, last_page)):
-        url = 'https://www.flickr.com/photos/nlowell/page' + str(page)
+        url = stream_url + '/page' + str(page)
         print(url)
-        stream = get_photostream(url)
+        stream = get_photostream(url, album)
         archive = process_photo_stream_page(stream, archive)
 
     return archive
@@ -149,6 +169,11 @@ def process_photo_stream_page(stream, archive=None):
                 camera, timestamp = ('Error', 'Error')
             info['camera'] = camera
             info['timestamp'] = timestamp
+            
+            date = timestamp.split(' ')[0]
+    
+            info['date'] = date
+            
             archive['data'].append(info)
             archive['meta']['ids'].append(photo_id)
             archive['meta']['last_updated'] = str(arrow.now())
