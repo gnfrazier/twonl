@@ -1,9 +1,13 @@
 # Data files for this repo
-*.toml
 archive.json
-images/
 audio/
+backups/
+images/
 *.mp3
+*.toml
+
+# Incomplete notebook files
+Untitled*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
