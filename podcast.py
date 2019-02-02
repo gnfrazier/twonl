@@ -27,7 +27,6 @@ def get_mp3(podcast_link, archive):
     return mp3_file, archive
 
 
-
 def get_id3_tag(mp3_file):
 
     id_info = tinytag.TinyTag.get(mp3_file).as_dict()
@@ -42,7 +41,6 @@ def get_id3_tag(mp3_file):
     id_info['date'] = date
 
     id_info['audio'] = mp3_file
-    
 
     return id_info
 
@@ -57,11 +55,11 @@ def match_photo_date(id_info, archive):
 
             walk.update(id_info)
             mp3_file = id_info.get('audio')
-            
+
             if mp3_file.find('.mp3') > 1:
                 mp3_name = mp3_file.strip('audio/')
                 archive['meta']['audio'].append(mp3_name)
-                
+
             else:
                 print('Unable to get mp3 info from', id_info)
 

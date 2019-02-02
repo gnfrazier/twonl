@@ -1,6 +1,5 @@
-
-
 import datetime
+import json
 
 from bs4 import BeautifulSoup
 import requests
@@ -112,9 +111,9 @@ def process_tweet_body(body):
     except IndexError:
 
         raw_title = body
-        
+
     # Early tweets have a dash
-    raw_title = raw_title.replace(' -','')
+    raw_title = raw_title.replace(' -', '')
 
     comma = raw_title.find(',')
 
@@ -139,12 +138,12 @@ def process_tweet_body(body):
 
     # TODO refactor using deque to improve performance
     t_parts = tag_temp.split(' ')
-    
-    if len(t_parts)<2:
+
+    if len(t_parts) < 2:
         print('Unable to parse title')
         info['tag'] = 'Error'
         return info
-        
+
     info['tag'] = t_parts.pop(0)
     info['temp'] = t_parts.pop(0).strip('F')
     info['sun'] = ' '.join(t_parts)
@@ -179,7 +178,7 @@ def build_twitter_archive(start_year, end_year):
 
     tweet_data = []
 
-    for y in range(start_year, end_year):  
+    for y in range(start_year, end_year):
 
         for m in range(1, 13):
 
@@ -208,7 +207,7 @@ def build_twitter_archive(start_year, end_year):
 
                 # Only archive Nate's tweets
                 if tweet.user == 'nlowell':
-                    
+
                     tweet_data.append(vars(tweet))
 
     return tweet_data
@@ -245,16 +244,24 @@ def filter_twitter_search(tw_archive):
         else:
             errors.append(item)
 
-
     save_tweets(walks, 'walk')
     save_tweets(unknown, 'unkown')
     save_tweets(errors, 'errors')
-    
+
     return True
+
+
+def save_tweets(archive, record='tweets'):
+
+    filename = record + '.json'
+
+    with open(filename, 'w') as file:
+
+        file.write(json.dumps(archive, indent=4))
+
+    return True
+
 
 if __name__ == "__main__":
 
     pass
-
-
-
