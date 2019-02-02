@@ -1,6 +1,6 @@
 # Data files for this repo
 archive.json
-tweets.json
+*.json
 audio/
 backups/
 images/

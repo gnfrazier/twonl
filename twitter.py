@@ -208,7 +208,7 @@ def build_twitter_archive(start_year, end_year):
 
                 # Only archive Nate's tweets
                 if tweet.user == 'nlowell':
-
+                    
                     tweet_data.append(vars(tweet))
 
     return tweet_data
