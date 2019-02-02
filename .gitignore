@@ -4,6 +4,7 @@ archive.json
 audio/
 backups/
 images/
+latest/
 *.mp3
 *.toml
 
