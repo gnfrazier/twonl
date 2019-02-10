@@ -189,7 +189,7 @@ def build_twitter_archive(start_year, end_year):
                 e = 1
                 ye = y + 1
 
-            # TODO convert to arrow library
+            # TODO use the new_tweets function
             tommw_search = tws.query_tweets('#tommw',
                                             limit=None,
                                             begindate=datetime.date(y, m, 2),
@@ -213,9 +213,56 @@ def build_twitter_archive(start_year, end_year):
     return tweet_data
 
 
+def new_tweets(archive, start_date=None, end_date=None):
+    '''Check for tweets not in archive since last update or by range.'''
+
+    tweet_data = []
+    
+    if isinstance(start_date, datetime.date):
+        start = start_date
+
+    else:
+
+        ts = archive['meta']['last_updated']
+
+        # In 3.7 can use datetime.fromisotime()
+        by, bm, bd = tuple(map(int,ts.split('T')[0].split('-')[:3]))
+        
+        start = datetime.date(by, bm, bd)
+
+    if isinstance(end_date, datetime.date):
+        end = end_date
+
+    else:
+        end = datetime.date.today()
+
+    tommw_search = tws.query_tweets('#tommw',
+                                    limit=None,
+                                    begindate=start,
+                                    enddate=end,
+                                    poolsize=30, lang='')
+
+    for tweet in tommw_search:
+
+        tweet.timestamp = datetime.datetime.strftime(
+            tweet.timestamp,
+            '%Y-%m-%d %H:%M:%S')
+
+        # Not tested jan-2019
+        tweet.date = tweet.timestamp.split(' ')[0]
+
+        # Only return Nate's tweets not in the archive
+        if (tweet.user == 'nlowell') and (tweet.id not in archive['meta']['tw_ids']):
+
+            tweet_data.append(vars(tweet))
+
+    return tweet_data
+
+
+
 def filter_twitter_search(tw_archive):
     '''Breaks list of dictionaries from twitter search
-    into walks, errors and unknown.json files.'''
+    into walks, errors and unknown lists'''
 
     walks = []
     unknown = []
@@ -243,12 +290,43 @@ def filter_twitter_search(tw_archive):
 
         else:
             errors.append(item)
+    
+    walks = tw_key_rename(walks)
 
-    save_tweets(walks, 'walk')
-    save_tweets(unknown, 'unkown')
-    save_tweets(errors, 'errors')
+    return {'walks':walks, 'unknown':unknown, 'errors':errors}
 
-    return True
+
+def tw_key_rename(walks):
+    '''Utility to rename identical keys except for date.'''
+    
+    for walk in walks:
+        walk['tw_id'] = walk.pop('id')
+        walk['tw_timestamp'] = walk.pop('timestamp')
+        
+    return walks
+
+
+def merge_tw_walks_into_photo_walks(archive, walks):
+    '''Utility to combine twitter and photo data'''
+    
+    for walk in walks:
+
+        for item in archive['data']:
+
+            if walk['date'] == item['date']:
+                
+                # Check the tweet id before merging avoid duplicates
+                if walk['tw_id'] not in archive['meta']['tw_ids']:
+                    item.update(walk)
+                    archive['meta']['tw_ids'].append(walk['tw_id'])
+
+
+        if walk['tw_id'] not in archive['meta']['tw_ids']:
+            archive['data'].append(walk)
+
+            archive['meta']['tw_ids'].append(walk['tw_id'])
+
+    return archive
 
 
 def save_tweets(archive, record='tweets'):
