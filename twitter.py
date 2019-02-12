@@ -234,7 +234,9 @@ def new_tweets(archive, start_date=None, end_date=None):
         end = end_date
 
     else:
-        end = datetime.date.today()
+        today = datetime.date.today()
+        # End search tomorrow to avoid invalid search dates
+        end = today.replace(day=today.day + 1)
 
     tommw_search = tws.query_tweets('#tommw',
                                     limit=None,
