@@ -116,6 +116,9 @@ def process_tweet_body(body):
     raw_title = raw_title.replace(' -', '')
 
     comma = raw_title.find(',')
+    
+    # When he wears gloves he makes typos
+    raw_title = raw_title.replace(' .', '. ')
 
     # Find a period with a space after it.
     period = raw_title.find('. ')
@@ -276,7 +279,7 @@ def filter_twitter_search(tw_archive):
             del item['html']
 
         except KeyError:
-            # If the data is already deleted, that is good
+            # If the html key is already deleted, that is good
             pass
 
         item.update(tweet)
