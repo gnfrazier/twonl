@@ -5,6 +5,7 @@ audio/
 backups/
 images/
 latest/
+weather/
 *.mp3
 *.toml
 
