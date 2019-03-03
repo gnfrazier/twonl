@@ -176,7 +176,7 @@ def process_photo_stream_page(stream, archive=None):
             
             archive['data'].append(info)
             archive['meta']['ids'].append(photo_id)
-            archive['meta']['last_updated'] = str(arrow.now())
+            
             print(photo_id + ' added')
 
         else:
