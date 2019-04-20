@@ -57,8 +57,9 @@ def get_photostream(stream_url, album=False):
     for photo in stream_list:
 
         photo_url = photo['style'][photo['style'].index(
-            'url(//'):-1].replace(
-            'url(//', 'https://')
+        'https://'):-1].replace(
+        'url(//', 'https://') # replace may no longer be needed
+
 
         photo_url_list.append(photo_url)
 
