@@ -56,10 +56,10 @@ def get_photostream(stream_url, album=False):
     photo_url_list = []
     for photo in stream_list:
 
-        photo_url = photo['style'][photo['style'].index(
-        'https://'):-1].replace(
-        'url(//', 'https://') # replace may no longer be needed
-
+        photo_last = photo['style'].split(';')[-1] # get the last element in the tag
+        photo_clean = photo_last.replace(' background-image: ','').replace(')', '')
+        photo_url = photo_clean.replace('url(//', 'https://')
+        
 
         photo_url_list.append(photo_url)
 
